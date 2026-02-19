@@ -305,6 +305,13 @@ function HomeContent() {
         if (data.remaining !== undefined && limits) setLimits((l) => l ? { ...l, remaining: data.remaining, resetAt: data.resetAt || l.resetAt } : null);
         if (data.isMatch) {
           setShowMatchModal(profile);
+          // Refresh matches list immediately
+          if (selectedCharacter) {
+            fetch(`/api/my-matches?characterId=${selectedCharacter.id}`)
+              .then((res) => res.json())
+              .then((data) => setMatches(data.matches || []))
+              .catch(() => {});
+          }
           fetchMyData();
         }
       } else {

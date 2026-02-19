@@ -105,6 +105,7 @@ export async function POST(request: Request) {
 
     let isMatch = false;
     if (theirLike) {
+      // Sort application IDs to ensure consistent ordering
       const [app1, app2] = [fromId, toApplicationId].sort();
       const { error: matchError } = await supabase.from('matches').upsert(
         {
@@ -114,7 +115,13 @@ export async function POST(request: Request) {
         },
         { onConflict: 'application_1_id,application_2_id' }
       );
-      isMatch = !matchError;
+      
+      if (matchError) {
+        console.error('Match creation error:', matchError);
+        // Continue even if match creation fails - the like was successful
+      } else {
+        isMatch = true;
+      }
     }
 
     return NextResponse.json({
