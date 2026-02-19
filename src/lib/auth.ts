@@ -56,22 +56,37 @@ export const authOptions: NextAuthOptions = {
                     response_type: 'code',
                 },
             },
+            // Ensure redirect_uri is properly normalized
+            checks: ['state', 'pkce'],
             token: {
                 url: 'https://ucp-tr.gta.world/oauth/token',
                 async request({ params, provider }) {
                     try {
+                        // Validate client credentials
+                        if (!provider.clientId || !provider.clientSecret) {
+                            console.error('Missing GTAW OAuth credentials:', {
+                                clientId: provider.clientId ? 'present' : 'missing',
+                                clientSecret: provider.clientSecret ? 'present' : 'missing',
+                            });
+                            throw new Error('GTAW OAuth client credentials are not configured. Please set GTAW_CLIENT_ID and GTAW_CLIENT_SECRET environment variables.');
+                        }
+
+                        // Normalize redirect_uri - fix double slashes and trailing slashes
+                        let redirectUri = params.redirect_uri;
+                        if (!redirectUri) {
+                            const baseUrl = (process.env.NEXTAUTH_URL || '').replace(/\/+$/, '');
+                            redirectUri = `${baseUrl}/api/auth/callback/gtaw`;
+                        }
+                        // Fix double slashes in the URL
+                        redirectUri = redirectUri.replace(/([^:]\/)\/+/g, '$1');
+
                         console.log('Token exchange params:', {
                             code: params.code ? 'present' : 'missing',
-                            redirect_uri: params.redirect_uri,
+                            redirect_uri: redirectUri,
                             client_id: provider.clientId ? 'present' : 'missing',
                             client_secret: provider.clientSecret ? 'present' : 'missing',
+                            nextauth_url: process.env.NEXTAUTH_URL,
                         });
-
-                        // Fallback redirect_uri
-                        const redirectUri = params.redirect_uri ||
-                            `${process.env.NEXTAUTH_URL}/api/auth/callback/gtaw`;
-
-                        console.log('Using redirect_uri:', redirectUri);
 
                         const response = await axios.post(
                             'https://ucp-tr.gta.world/oauth/token',

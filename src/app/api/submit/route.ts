@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
         if (!session?.user?.gtawId) {
             return NextResponse.json(
-                { error: 'Giriş yapmanız gerekiyor!' },
+                { error: 'You must be logged in!' },
                 { status: 401 }
             );
         }
@@ -32,21 +32,21 @@ export async function POST(request: NextRequest) {
 
         if (!firstName || !lastName || !age || !gender || !sexualPreference || !facebrowser || !description || !photoUrl) {
             return NextResponse.json(
-                { error: 'Tüm alanlar doldurulmalıdır!' },
+                { error: 'All fields must be filled!' },
                 { status: 400 }
             );
         }
 
         if (!characterId) {
             return NextResponse.json(
-                { error: 'Karakter seçimi gerekli!' },
+                { error: 'Character selection is required!' },
                 { status: 400 }
             );
         }
 
         if (parseInt(age) < 18) {
             return NextResponse.json(
-                { error: '18 yaşından küçükler başvuru yapamaz!' },
+                { error: 'You must be 18 or older to apply!' },
                 { status: 400 }
             );
         }
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         if (upsertError) {
             console.error('Upsert error:', upsertError);
             return NextResponse.json(
-                { error: `Başvuru kaydedilirken hata oluştu: ${upsertError.message}` },
+                { error: `Error saving application: ${upsertError.message}` },
                 { status: 500 }
             );
         }
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Submit error:', error);
         return NextResponse.json(
-            { error: 'Sunucu hatası!' },
+            { error: 'Server error!' },
             { status: 500 }
         );
     }
