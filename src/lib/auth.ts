@@ -80,23 +80,32 @@ export const authOptions: NextAuthOptions = {
                         // Fix double slashes in the URL
                         redirectUri = redirectUri.replace(/([^:]\/)\/+/g, '$1');
 
+                        // Build token request params
+                        const tokenParams: Record<string, string> = {
+                            grant_type: 'authorization_code',
+                            code: params.code as string,
+                            redirect_uri: String(redirectUri),
+                            client_id: provider.clientId as string,
+                            client_secret: provider.clientSecret as string,
+                        };
+
+                        // Add PKCE parameters if present
+                        if (params.code_verifier) {
+                            tokenParams.code_verifier = params.code_verifier as string;
+                        }
+
                         console.log('Token exchange params:', {
                             code: params.code ? 'present' : 'missing',
                             redirect_uri: redirectUri,
                             client_id: provider.clientId ? 'present' : 'missing',
                             client_secret: provider.clientSecret ? 'present' : 'missing',
+                            code_verifier: params.code_verifier ? 'present' : 'missing',
                             nextauth_url: process.env.NEXTAUTH_URL,
                         });
 
                         const response = await axios.post(
                             'https://ucp-tr.gta.world/oauth/token',
-                            new URLSearchParams({
-                                grant_type: 'authorization_code',
-                                code: params.code as string,
-                                redirect_uri: String(redirectUri),
-                                client_id: provider.clientId as string,
-                                client_secret: provider.clientSecret as string,
-                            }),
+                            new URLSearchParams(tokenParams),
                             {
                                 headers: {
                                     'Content-Type': 'application/x-www-form-urlencoded',
