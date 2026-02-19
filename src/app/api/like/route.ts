@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Like kaydedilemedi, tekrar dene.' }, { status: 500 });
     }
 
-    // Karşı taraf beni daha önce like etti mi?
+    // Karşı taraf beni daha önce like etti mi? (mutual like kontrolü)
     const { data: theirLike } = await supabase
       .from('likes')
       .select('id')
@@ -105,21 +105,46 @@ export async function POST(request: Request) {
 
     let isMatch = false;
     if (theirLike) {
-      // Sort application IDs to ensure consistent ordering
+      // Sort application IDs to ensure consistent ordering (application_1_id < application_2_id)
       const [app1, app2] = [fromId, toApplicationId].sort();
-      const { error: matchError } = await supabase.from('matches').upsert(
-        {
+      
+      // Check if match already exists
+      const { data: existingMatch } = await supabase
+        .from('matches')
+        .select('id')
+        .eq('application_1_id', app1)
+        .eq('application_2_id', app2)
+        .maybeSingle();
+
+      if (!existingMatch) {
+        // Create match only if it doesn't exist
+        const { error: matchError } = await supabase.from('matches').insert({
           application_1_id: app1,
           application_2_id: app2,
           created_by: 'mutual_like',
-        },
-        { onConflict: 'application_1_id,application_2_id' }
-      );
-      
-      if (matchError) {
-        console.error('Match creation error:', matchError);
-        // Continue even if match creation fails - the like was successful
+        });
+        
+        if (matchError) {
+          console.error('Match creation error:', matchError);
+          // Try upsert as fallback
+          const { error: upsertError } = await supabase.from('matches').upsert(
+            {
+              application_1_id: app1,
+              application_2_id: app2,
+              created_by: 'mutual_like',
+            },
+            { onConflict: 'application_1_id,application_2_id' }
+          );
+          if (upsertError) {
+            console.error('Match upsert error:', upsertError);
+          } else {
+            isMatch = true;
+          }
+        } else {
+          isMatch = true;
+        }
       } else {
+        // Match already exists
         isMatch = true;
       }
     }
