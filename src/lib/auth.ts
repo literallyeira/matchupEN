@@ -56,11 +56,11 @@ export const authOptions: NextAuthOptions = {
                     response_type: 'code',
                 },
             },
-            // Ensure redirect_uri is properly normalized
+            // PKCE is required by GTA World OAuth server
             checks: ['state', 'pkce'],
             token: {
                 url: 'https://ucp-tr.gta.world/oauth/token',
-                async request({ params, provider }) {
+                async request({ params, provider, checks }) {
                     try {
                         // Validate client credentials
                         if (!provider.clientId || !provider.clientSecret) {
@@ -89,8 +89,10 @@ export const authOptions: NextAuthOptions = {
                             client_secret: provider.clientSecret as string,
                         };
 
-                        // Add PKCE parameters if present
-                        if (params.code_verifier) {
+                        // Add PKCE code_verifier from checks (NextAuth provides this)
+                        if (checks?.code_verifier) {
+                            tokenParams.code_verifier = checks.code_verifier;
+                        } else if (params.code_verifier) {
                             tokenParams.code_verifier = params.code_verifier as string;
                         }
 
@@ -99,7 +101,7 @@ export const authOptions: NextAuthOptions = {
                             redirect_uri: redirectUri,
                             client_id: provider.clientId ? 'present' : 'missing',
                             client_secret: provider.clientSecret ? 'present' : 'missing',
-                            code_verifier: params.code_verifier ? 'present' : 'missing',
+                            code_verifier: (checks?.code_verifier || params.code_verifier) ? 'present' : 'missing',
                             nextauth_url: process.env.NEXTAUTH_URL,
                         });
 
