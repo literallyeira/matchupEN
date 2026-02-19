@@ -72,7 +72,7 @@ export const authOptions: NextAuthOptions = {
                         }
 
                         // Normalize redirect_uri - fix double slashes and trailing slashes
-                        let redirectUri = params.redirect_uri;
+                        let redirectUri: string = String(params.redirect_uri || '');
                         if (!redirectUri) {
                             const baseUrl = (process.env.NEXTAUTH_URL || '').replace(/\/+$/, '');
                             redirectUri = `${baseUrl}/api/auth/callback/gtaw`;
