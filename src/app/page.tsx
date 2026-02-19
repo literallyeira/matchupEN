@@ -12,6 +12,7 @@ import { isCompatible } from '@/lib/compatibility';
 import { getProfileCompleteness } from '@/lib/profile-completeness';
 import { PhotoSlider } from '@/components/PhotoSlider';
 import { getStoredRef, clearStoredRef } from '@/components/RefTracker';
+import { Chat } from '@/components/Chat';
 
 interface Character {
   id: number;
@@ -109,7 +110,7 @@ function HomeContent() {
   const [isLoadingPossible, setIsLoadingPossible] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'discover' | 'matches'>('discover');
+  const [activeTab, setActiveTab] = useState<'discover' | 'matches' | 'chat'>('discover');
   const [showMatchModal, setShowMatchModal] = useState<Application | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [limits, setLimits] = useState<{ tier: string; dailyLimit: number; remaining: number; resetAt: string; boostExpiresAt: string | null; subscriptionExpiresAt?: string | null; undoRemaining?: number; undoResetAt?: string } | null>(null);
@@ -974,6 +975,12 @@ function HomeContent() {
           >
             <i className="fa-solid fa-heart mr-2" /> Matches {matches.length > 0 && <span className="ml-1">({matches.length})</span>}
           </button>
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'chat' ? 'bg-[var(--matchup-primary)] text-white' : 'text-[var(--matchup-text-muted)]'}`}
+          >
+            <i className="fa-solid fa-comments mr-2" /> Chat
+          </button>
         </div>
 
         {activeTab === 'discover' && (
@@ -1219,6 +1226,20 @@ function HomeContent() {
                 );
               })
             )}
+          </div>
+        )}
+
+        {activeTab === 'chat' && hasApplication && userApplication && selectedCharacter && (
+          <div className="animate-fade-in">
+            <Chat characterId={selectedCharacter.id} myApplicationId={userApplication.id} />
+          </div>
+        )}
+
+        {activeTab === 'chat' && (!hasApplication || !userApplication || !selectedCharacter) && (
+          <div className="card text-center py-10">
+            <i className="fa-solid fa-comments text-5xl text-[var(--matchup-text-muted)] mb-3" />
+            <h3 className="text-lg font-bold mb-1">No chat available</h3>
+            <p className="text-[var(--matchup-text-muted)] text-sm">Create a profile and get matches to start chatting!</p>
           </div>
         )}
       </div>
